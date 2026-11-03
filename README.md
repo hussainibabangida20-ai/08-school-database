@@ -14,7 +14,7 @@ A student's class is recorded **per term** through enrollment, rather than store
 | **Enrollment** | **PK** enrollment ID; student admission number (**FK**); term ID (**FK**); class ID (**FK**). Enforce one enrollment per student per term. |
 | **ClassSubjectOffering** | **PK** offering ID; term ID (**FK**); class ID (**FK**); subject code (**FK**); teacher staff number (**FK**). Enforce one offering per class, subject, and term. |
 | **Result** | **Composite PK** enrollment ID (**FK**) + offering ID (**FK**); CA score; exam score |
-| **Attendance** | **Composite PK** enrollment ID (**FK**) + attendance date; status: present, absent, or late |
+| **Attendance** | **Composite PK** student admission number (**FK**) + attendance date; status: present, absent, or late |
 
 ### Relationships and cardinalities
 
@@ -23,9 +23,9 @@ A student's class is recorded **per term** through enrollment, rather than store
 - **Class, Subject, and Term → ClassSubjectOffering: 1:N each.** This resolves the **M:N relationship between classes and subjects** and records the teacher assigned to each offering. A class takes many subjects, and a subject can be taken by many classes.
 - **Teacher → ClassSubjectOffering: 1:N.** Each offering has one teacher; a teacher may teach multiple offerings.
 - **Enrollment → Result: 1:N** and **ClassSubjectOffering → Result: 1:N.** Together these represent the **M:N relationship between enrolled students and subject offerings**, with CA and exam scores as attributes of that relationship.
-- **Enrollment → Attendance: 1:N.** Each attendance record belongs to one enrollment; an enrollment has at most one attendance record per date.
+- **Student → Attendance: 1:N.** Each attendance record belongs to one student, and the composite key permits at most one record per student per day.
 
-Business rules: a result's enrollment and offering must be for the **same term and class**. Attendance dates should fall within the enrollment's term.
+Business rules: a result's enrollment and offering must be for the **same term and class**; the schema trigger enforces this. Attendance dates should fall within the student's active enrollment term; this remains a date/business-rule validation because daily attendance is keyed directly by student and date.
 
 ## 2. Third normal form
 
@@ -100,7 +100,7 @@ erDiagram
     }
 
     ATTENDANCE {
-        int enrollment_id PK, FK
+        string admission_number PK, FK
         date attendance_date PK
         string status
     }
@@ -115,7 +115,9 @@ erDiagram
     TEACHER ||--o{ CLASS_SUBJECT_OFFERING : "teaches"
     ENROLLMENT ||--o{ RESULT : "earns"
     CLASS_SUBJECT_OFFERING ||--o{ RESULT : "has scores"
-    ENROLLMENT ||--o{ ATTENDANCE : "has daily records"
+    STUDENT ||--o{ ATTENDANCE : "has daily records"
 ```
 
 CA scores range from **0–40**, and exam scores from **0–60**. These are validation rules for results.
+
+The MySQL/MariaDB implementation is in [`schema.sql`](./schema.sql), with example records in [`seed.sql`](./seed.sql).
