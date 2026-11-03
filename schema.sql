@@ -7,6 +7,7 @@ DROP TRIGGER IF EXISTS bu_result_validate_offering;
 -- Drop dependent tables before their parents so the script can be re-run.
 DROP TABLE IF EXISTS result;
 DROP TABLE IF EXISTS attendance;
+DROP TABLE IF EXISTS class_transfers;
 DROP TABLE IF EXISTS enrollment;
 DROP TABLE IF EXISTS class_subject_offering;
 DROP TABLE IF EXISTS school_class;

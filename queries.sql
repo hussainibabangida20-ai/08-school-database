@@ -182,33 +182,29 @@ GROUP BY t.staff_number, t.first_name, t.last_name
 ORDER BY teacher_name;
 
 -- 7. Business question: What percentage of recorded school days did each student attend, and who is below 80%?
--- Technique: A CTE aggregates attendance in the selected term; present and late both count as attended.
--- Students with no recorded days have no measurable percentage and are omitted.
-WITH attendance_totals AS (
+-- Technique: A CTE scans attendance in the term's date range once, aggregates by student,
+-- then LEFT JOIN preserves students with no attendance; present and late count as attended.
+WITH attendance_by_student AS (
     SELECT
-        s.admission_number,
-        s.first_name,
-        s.middle_name,
-        s.last_name,
-        COUNT(a.attendance_date) AS recorded_days,
+        a.admission_number,
+        COUNT(*) AS recorded_days,
         SUM(CASE WHEN a.status IN ('present', 'late') THEN 1 ELSE 0 END) AS attended_days
-    FROM student s
-    JOIN term t ON t.label = '2026/2027 First Term'
-    LEFT JOIN attendance a
-        ON a.admission_number = s.admission_number
-       AND a.attendance_date BETWEEN t.start_date AND t.end_date
-    GROUP BY s.admission_number, s.first_name, s.middle_name, s.last_name
+    FROM attendance a
+    JOIN term t
+      ON t.label = '2026/2027 First Term'
+     AND a.attendance_date BETWEEN t.start_date AND t.end_date
+    GROUP BY a.admission_number
 )
 SELECT
-    admission_number,
-    CONCAT_WS(' ', first_name, middle_name, last_name) AS student_name,
-    recorded_days,
-    attended_days,
-    ROUND(100.0 * attended_days / recorded_days, 2) AS attendance_percentage
-FROM attendance_totals
-WHERE recorded_days > 0
-  AND 100.0 * attended_days / recorded_days < 80
-ORDER BY attendance_percentage, student_name;
+    s.admission_number,
+    CONCAT_WS(' ', s.first_name, s.middle_name, s.last_name) AS student_name,
+    a.recorded_days,
+    a.attended_days,
+    ROUND(100.0 * a.attended_days / a.recorded_days, 2) AS attendance_percentage
+FROM attendance_by_student a
+JOIN student s ON s.admission_number = a.admission_number
+WHERE 100.0 * a.attended_days / a.recorded_days < 80
+ORDER BY attendance_percentage, s.last_name, s.first_name;
 
 -- 8. Business question: Who is the top-scoring student or students in each class this term?
 -- Technique: A correlated subquery compares each student's total with every other total in that class;
