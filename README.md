@@ -120,4 +120,4 @@ erDiagram
 
 CA scores range from **0–40**, and exam scores from **0–60**. These are validation rules for results.
 
-The MySQL/MariaDB implementation is in [`schema.sql`](./schema.sql), with example records in [`seed.sql`](./seed.sql).
+The MySQL/MariaDB implementation is in [`schema.sql`](./schema.sql), with example records in [`seed.sql`](./seed.sql) and reporting examples/views in [`queries.sql`](./queries.sql).
